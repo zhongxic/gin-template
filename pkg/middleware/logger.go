@@ -8,8 +8,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/zhongxic/gin-template/pkg/errorcode"
 	"github.com/zhongxic/gin-template/pkg/result"
+)
+
+const (
+	ContextKeyTraceId    = "traceId"
+	RequestHeaderTraceId = "X-Trace-Id"
 )
 
 type ResponseWriterWrapper struct {
@@ -33,6 +39,11 @@ func (w ResponseWriterWrapper) WriteString(s string) (int, error) {
 
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		traceId := c.Request.Header.Get(RequestHeaderTraceId)
+		if traceId == "" {
+			traceId = uuid.New().String()
+		}
+		c.Set(ContextKeyTraceId, traceId)
 		start := time.Now()
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
@@ -53,6 +64,7 @@ func Logger() gin.HandlerFunc {
 		response, _ := io.ReadAll(writer.Body)
 
 		slog.Info("completed",
+			slog.String("traceId", traceId),
 			slog.Group("request",
 				slog.String("path", path),
 				slog.String("query", query),
