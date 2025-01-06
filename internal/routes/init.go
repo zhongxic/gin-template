@@ -1,30 +1,23 @@
 package routes
 
 import (
-	"sync"
-
 	"github.com/gin-gonic/gin"
+	"github.com/zhongxic/gin-template/config"
 	"github.com/zhongxic/gin-template/internal/controller/ping"
 	"github.com/zhongxic/gin-template/pkg/middleware"
 )
 
-var (
-	initOnce sync.Once
-	engine   *gin.Engine
-)
-
-func Init() *gin.Engine {
-	initOnce.Do(func() {
-		engine = initRoutes()
-	})
-	return engine
+func Init(cfg *config.Config) (*gin.Engine, error) {
+	return initRoutes(cfg)
 }
 
-func initRoutes() *gin.Engine {
+func initRoutes(cfg *config.Config) (*gin.Engine, error) {
 	r := gin.New()
 	registerMiddleware(r)
-	registerRoutes(r)
-	return r
+	if err := registerRoutes(r, cfg); err != nil {
+		return nil, err
+	}
+	return r, nil
 }
 
 func registerMiddleware(r *gin.Engine) {
@@ -32,7 +25,8 @@ func registerMiddleware(r *gin.Engine) {
 	r.Use(middleware.Recover())
 }
 
-func registerRoutes(r *gin.Engine) {
+func registerRoutes(r *gin.Engine, cfg *config.Config) error {
 	pingController := &ping.Controller{}
 	r.GET("/ping", pingController.Ping)
+	return nil
 }
